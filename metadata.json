@@ -1,0 +1,7 @@
+{
+  "name": "LEViO AI Discord Bot",
+  "description": "A professional, modular AI Discord bot with music, moderation, leveling, economy, and a web dashboard.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

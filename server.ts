@@ -1,0 +1,52 @@
+import express from "express";
+import { createServer as createViteServer } from "vite";
+import { LevioBot } from "./src/bot";
+import db from "./src/lib/db";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+async function startServer() {
+  const app = express();
+  const PORT = 3000;
+
+  // API Routes for Dashboard
+  app.get("/api/stats", (req, res) => {
+    const totalUsers = db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM users').get() as any;
+    const topUsers = db.prepare('SELECT user_id as id, level, xp FROM users ORDER BY xp DESC LIMIT 5').all();
+    const serverStats = db.prepare(`
+      SELECT date, SUM(messages_sent) as messages_sent, SUM(commands_used) as commands_used 
+      FROM server_stats 
+      GROUP BY date 
+      ORDER BY date DESC 
+      LIMIT 7
+    `).all();
+    
+    res.json({
+      totalUsers: totalUsers.count,
+      topUsers,
+      serverStats
+    });
+  });
+
+  // Vite middleware for development
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    app.use(express.static("dist"));
+  }
+
+  // Start Discord Bot
+  const bot = new LevioBot(process.env.DISCORD_TOKEN || 'YOUR_DISCORD_TOKEN');
+  await bot.start();
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 LEViO Dashboard running on http://localhost:${PORT}`);
+  });
+}
+
+startServer();
