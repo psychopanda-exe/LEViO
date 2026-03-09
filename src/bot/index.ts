@@ -49,9 +49,6 @@ export class LevioBot {
       }
     });
     
-    // Load default extractors
-    this.player.extractors.loadDefault();
-    
     // Player events for stability
     this.player.events.on('error', (queue, error) => {
       console.error(`[${queue.guild.name}] Error emitted from the queue: ${error.message}`);
@@ -250,6 +247,11 @@ export class LevioBot {
       return;
     }
     try {
+      // Load music extractors before logging in
+      console.log('🎵 Loading music extractors...');
+      await this.player.extractors.loadDefault();
+      console.log('✅ Music extractors loaded.');
+
       await this.client.login(this.token);
     } catch (error) {
       console.error("❌ Failed to login to Discord:", error);
