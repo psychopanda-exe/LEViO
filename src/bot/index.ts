@@ -42,7 +42,24 @@ export class LevioBot {
       }),
     });
 
-    this.player = new Player(this.client);
+    this.player = new Player(this.client, {
+      ytdlOptions: {
+        quality: 'lowestaudio', // Use lower quality to save bandwidth and CPU
+        highWaterMark: 1 << 25
+      }
+    });
+    
+    // Load default extractors
+    this.player.extractors.loadDefault();
+    
+    // Player events for stability
+    this.player.events.on('error', (queue, error) => {
+      console.error(`[${queue.guild.name}] Error emitted from the queue: ${error.message}`);
+    });
+    this.player.events.on('playerError', (queue, error) => {
+      console.error(`[${queue.guild.name}] Error emitted from the connection: ${error.message}`);
+    });
+    
     this.setupEvents();
   }
 
