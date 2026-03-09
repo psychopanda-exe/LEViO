@@ -1,10 +1,10 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import { LevioBot } from "./src/bot/index.ts";
 import db from "./src/lib/db.ts";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 async function startServer() {
   const app = express();
