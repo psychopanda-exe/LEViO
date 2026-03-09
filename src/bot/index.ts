@@ -6,7 +6,8 @@ import {
   REST, 
   Routes,
   EmbedBuilder,
-  PermissionFlagsBits
+  PermissionFlagsBits,
+  Options
 } from 'discord.js';
 import { Player } from 'discord-player';
 import db from '../lib/db';
@@ -28,6 +29,17 @@ export class LevioBot {
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildMembers,
       ],
+      // Memory optimization: Limit caching
+      makeCache: Options.cacheWithLimits({
+        MessageManager: 10, // Only keep last 10 messages per channel
+        StageInstanceManager: 0,
+        ThreadManager: 0,
+        ThreadMemberManager: 0,
+        AutoModerationRuleManager: 0,
+        GuildScheduledEventManager: 0,
+        ReactionManager: 0,
+        PresenceManager: 0, // We don't need presence tracking
+      }),
     });
 
     this.player = new Player(this.client);

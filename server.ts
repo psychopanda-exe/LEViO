@@ -9,35 +9,51 @@ dotenv.config();
 async function startServer() {
   const app = express();
   const PORT = 3000;
+  const DISABLE_DASHBOARD = process.env.DISABLE_DASHBOARD === 'true';
 
-  // API Routes for Dashboard
-  app.get("/api/stats", (req, res) => {
-    const totalUsers = db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM users').get() as any;
-    const topUsers = db.prepare('SELECT user_id as id, level, xp FROM users ORDER BY xp DESC LIMIT 5').all();
-    const serverStats = db.prepare(`
-      SELECT date, SUM(messages_sent) as messages_sent, SUM(commands_used) as commands_used 
-      FROM server_stats 
-      GROUP BY date 
-      ORDER BY date DESC 
-      LIMIT 7
-    `).all();
-    
-    res.json({
-      totalUsers: totalUsers.count,
-      topUsers,
-      serverStats
+  if (!DISABLE_DASHBOARD) {
+    // API Routes for Dashboard
+    app.get("/api/stats", (req, res) => {
+      try {
+        const totalUsers = db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM users').get() as any;
+        const topUsers = db.prepare('SELECT user_id as id, level, xp FROM users ORDER BY xp DESC LIMIT 5').all();
+        const serverStats = db.prepare(`
+          SELECT date, SUM(messages_sent) as messages_sent, SUM(commands_used) as commands_used 
+          FROM server_stats 
+          GROUP BY date 
+          ORDER BY date DESC 
+          LIMIT 7
+        `).all();
+        
+        res.json({
+          totalUsers: totalUsers?.count || 0,
+          topUsers: topUsers || [],
+          serverStats: serverStats || []
+        });
+      } catch (error) {
+        console.error("API Error:", error);
+        res.status(500).json({ error: "Internal Server Error", details: (error as Error).message });
+      }
     });
-  });
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
+    // Catch-all for other /api routes to prevent falling through to Vite
+    app.all("/api/*", (req, res) => {
+      res.status(404).json({ error: "API Route Not Found" });
     });
-    app.use(vite.middlewares);
+
+    // Vite middleware for development
+    if (process.env.NODE_ENV !== "production") {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } else {
+      app.use(express.static("dist"));
+    }
+    console.log(`📊 Dashboard enabled on port ${PORT}`);
   } else {
-    app.use(express.static("dist"));
+    console.log("🚀 Dashboard is disabled to save resources.");
   }
 
   // Start Discord Bot
