@@ -10,9 +10,9 @@ import {
   Options
 } from 'discord.js';
 import { Player } from 'discord-player';
-import db from '../lib/db';
-import { askLevio } from '../lib/ai';
-import { commands } from './commands';
+import db from '../lib/db.ts';
+import { askLevio } from '../lib/ai.ts';
+import { commands } from './commands.ts';
 
 export class LevioBot {
   public client: Client;
